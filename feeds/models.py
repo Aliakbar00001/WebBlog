@@ -8,7 +8,7 @@ from imagekit.processors import ResizeToFill
 from datetime import datetime
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(User)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     followers = models.ManyToManyField('UserProfile',
                                         related_name="followers_profile",
                                         blank=True)
@@ -40,7 +40,7 @@ class UserProfile(models.Model):
         return self.user.username
 
 class IGPost(models.Model):
-    user_profile = models.ForeignKey(UserProfile, null=True, blank=True)
+    user_profile = models.ForeignKey(UserProfile, null=True, blank=True,on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
     image = ProcessedImageField(upload_to='posts',
                                 #processors=[ResizeToFill(200,200)],
@@ -59,8 +59,8 @@ class IGPost(models.Model):
 
 
 class Comment(models.Model):
-    post = models.ForeignKey('IGPost')
-    user = models.ForeignKey(User)
+    post = models.ForeignKey('IGPost',on_delete=models.CASCADE)
+    user = models.ForeignKey(User,on_delete=models.CASCADE)
     comment = models.CharField(max_length=100)
     posted_on = models.DateTimeField(default=datetime.now)
 
@@ -69,8 +69,8 @@ class Comment(models.Model):
 
 
 class Like(models.Model):
-    post = models.ForeignKey('IGPost')
-    user = models.ForeignKey(User)
+    post = models.ForeignKey('IGPost',on_delete=models.CASCADE)
+    user = models.ForeignKey(User,on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ("post", "user")
@@ -81,8 +81,8 @@ class Like(models.Model):
 
 class Room(models.Model):
     label = models.SlugField(unique=True)
-    receiver = models.ForeignKey(User, related_name="receiver")
-    sender = models.ForeignKey(User, related_name="sender")
+    receiver = models.ForeignKey(User, related_name="receiver",on_delete=models.CASCADE)
+    sender = models.ForeignKey(User, related_name="sender",on_delete=models.CASCADE)
 
     def get_last_message(self):
         message = Message.objects.filter(room=self).last()
@@ -97,10 +97,19 @@ class Room(models.Model):
 
 
 class Message(models.Model):
-    room = models.ForeignKey(Room, related_name="messages")
-    sender = models.ForeignKey(User)
+    room = models.ForeignKey(Room, related_name="messages",on_delete=models.CASCADE)
+    sender = models.ForeignKey(User,on_delete=models.CASCADE)
     text = models.TextField()
     timestamp = models.DateTimeField(default=datetime.now, db_index=True)
 
     def __str__(self):
         return self.text + " S:" + self.sender.username
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.contrib.auth.models import User
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        from feeds.models import UserProfile
+        UserProfile.objects.create(user=instance)

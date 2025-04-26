@@ -1,6 +1,6 @@
 import re
 from django import template
-from django.core.urlresolvers import reverse, NoReverseMatch
+from django.urls import reverse, NoReverseMatch
 from feeds.models import Like
 
 register = template.Library()

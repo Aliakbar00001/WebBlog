@@ -7,7 +7,8 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from django.core.urlresolvers import reverse
+from django.urls import reverse
+
 from django.views.generic.edit import CreateView
 
 from imagekit.models import ProcessedImageField
@@ -18,7 +19,7 @@ from . models import UserProfile, IGPost, Comment, Like, Message, Room
 
 
 def index(request):
-    if not request.user.is_authenticated():
+    if request.user.is_authenticated:
         redirect('login')
 
     # Only return posts from users that are being followed, test this later

@@ -1,8 +1,11 @@
-from django.shortcuts import redirect
+class FilterUnauthUsers:
+    def __init__(self, get_response):
+        self.get_response = get_response
 
-class FilterUnauthUsers(object):
-    def process_request(self, request):
-        allowed_paths = ['/login/', '/signup/', '/admin/', '/admin/login/']
-        if not request.user.is_authenticated and request.path not in allowed_paths:
-            return redirect('login')
-        return None
+    def __call__(self, request):
+        # Здесь твоя логика
+        if not request.user.is_authenticated and not request.path.startswith('/login') and not request.path.startswith('/signup'):
+            from django.shortcuts import redirect
+            return redirect('login')  # или куда тебе надо редиректить
+        response = self.get_response(request)
+        return response
